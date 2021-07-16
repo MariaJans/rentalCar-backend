@@ -1,9 +1,10 @@
 import express from "express";
-import cors from "cors";
-import Database from "./db.js"
 const app = express();
+import cors from "cors";
+import Database from "./db.js";
+import authRoute from  "./routes/auth";
 app.use(cors());
 app.use(express.json());
+app.use("/auth", authRoute);
 Database();
-
-app.listen(8000, () => console.log("it listens"));
+app.listen(8000, () => console.log("server is up and running"));
