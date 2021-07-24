@@ -1,42 +1,38 @@
-const router = require("express").Router();
-const User = require("../models/User");
-const bcrypt = require("bcrypt");
+import express from "express";
+const router = express.Router();
 
+const {
+  registerUser,
+  loginUser,
+  logout,
+  forgotPassword,
+  resetPassword,
+  getUserProfile,
+  updatePassword,
+  updateProfile,
+  allUsers,
+  getUserDetails,
+  updateUser,
+  deleteUser,
+} = require("../controllers/authController");
 
-//registration
-router.post("/register", async (req, res) => {
-  try {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPass = await bcrypt.hash(req.body.password, salt);
-    const newUser = new User({
-      fullName: req.body.fullName,
-      username: req.body.username,
-      password: hashedPass,
-      email: req.body.email,
-      phonenumber: req.body.phonenumber,
-      driverlisence: req.body.driverlisence,
-    });
-   
-    
-    const user = await newUser.save();
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(200).json(err);
-  }
-});
+const { isAuthenticatedUser, authorizeRoles } = require("../middlewares/auth");
 
-//login
-router.post("/login", async (req, res) => {
-  try {
-    const user = await User.findOne({ username: req.body.username });
-    if(!user) throw new Error("Wrong credentials!");
-    console.log("entered")
-    const validated = await bcrypt.compare(req.body.password, user.password);
-    if(!validated) throw new Error("Wrong credentials!");
+router.route("/register").post(registerUser);
+router.route("/login").post(loginUser);
+router.route("/password/forgot").post(forgotPassword);
+router.route("/password/reset/:token").put(resetPassword);
+router.route("/logout").get(logout);
+router.route("/me").get(isAuthenticatedUser, getUserProfile);
+router.route("/password/update").put(isAuthenticatedUser, updatePassword);
+router.route("/me/update").put(isAuthenticatedUser, updateProfile);
+router
+  .route("/admin/users")
+  .get(isAuthenticatedUser, authorizeRoles("admin"), allUsers);
+router
+  .route("/admin/user/:id")
+  .get(isAuthenticatedUser, authorizeRoles("admin"), getUserDetails)
+  .put(isAuthenticatedUser, authorizeRoles("admin"), updateUser)
+  .delete(isAuthenticatedUser, authorizeRoles("admin"), deleteUser);
 
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(500).json(err.message);
-  }
-});
 module.exports = router;
